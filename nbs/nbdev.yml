@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "datasetsDynamic"
+  site-url: "https://kaiguender.github.io/datasetsDynamic"
+  description: "A package to load datasets for benchmarking prescriptive analytics approaches dynamically"
+  repo-branch: main
+  repo-url: "https://github.com/kaiguender/datasetsDynamic"
