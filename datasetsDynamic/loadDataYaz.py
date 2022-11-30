@@ -22,7 +22,7 @@ from .utils import *
 __all__ = ['loadDataYaz']
 
 # %% ../nbs/01_yaz.ipynb 5
-def loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, unstacked = False):
+def loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, unstacked = False, disable_progressbar = False):
     
     # LOAD DATA
     dataPath = pkg_resources.resource_stream(__name__, 'datasets/dataYaz_unprocessed.csv')
