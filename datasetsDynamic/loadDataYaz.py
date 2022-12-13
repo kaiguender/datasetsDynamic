@@ -113,7 +113,7 @@ def loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, unstacked = False
         colsDemand = [column for column in X.columns if 'demand__' in column]
         colsOther = [column for column in X.columns if not 'demand__' in column]
         
-        generalData = X[colsOther][X['id'] == X['id'][0]].reset_index(drop = True).drop('scalingValue', axis = 1)
+        generalData = X[colsOther][X['id'] == X['id'][0]].reset_index(drop = True).drop(['id', 'scalingValue'], axis = 1)
         
         XList = list()
         yList = list()
@@ -156,12 +156,13 @@ def loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, unstacked = False
     #---
     
     # SPLIT INTO TRAIN AND TEST DATA
-    data = pd.concat([y, X], axis = 1)
-    XArray = np.array(X.drop(['label', 'id'], axis = 1))   
+    data = pd.concat([y, X], axis = 1)   
     
     if unstacked:
+        XArray = np.array(X.drop(['label'], axis = 1))
         yArray = np.array(y)           
     else:
+        XArray = np.array(X.drop(['label', 'id'], axis = 1))
         yArray = np.ravel(y)    
     
     XTrain = XArray[data['label'] == 'train']
