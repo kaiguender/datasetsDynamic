@@ -1,0 +1,44 @@
+[
+  {
+    "objectID": "utils.html",
+    "href": "utils.html",
+    "title": "Load Datasets",
+    "section": "",
+    "text": "source\n\n\n\n\n add_lag_features (X, y, column_id, column_sort, feature_dict,\n                   time_windows, n_jobs=32, disable_progressbar=False)\n\nCreate lag features for y and add them to X Parameters: ———– X: pandas.DataFrame feature matrix to which TS features are added. y: pandas.DataFrame, time series to compute the features for. column_id: list, list of column names to group by, e.g. [“shop”,“product”]. If set to None, either there should be nothing to groupby or each group should be represented by a separate target column in y. column_sort: str, column name used to sort the DataFrame. If None, will be filled by an increasing number, meaning that the order of the passed dataframes are used as “time” for the time series. feature_dict: dict, dictionary containing feature calculator names with the corresponding parameters time_windows : list of tuples, each tuple (min_timeshift, max_timeshift), represents the time shifts for ech time windows to comupute e.g. [(7,7),(1,14)] for two time windos a) time window with a fix size of 7 and b) time window that starts with size 1 and increases up to 14. Then shifts by 1 for each step.\n\n\n\n\nsource\n\n\n\n\n getWeekdayFeature (weekday)\n\n\nsource\n\n\n\n\n getMonthFeature (month)\n\n\nsource\n\n\n\n\n getDayIndex (date)"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "datasetsDynamic",
+    "section": "",
+    "text": "pip install datasetsDynamic"
+  },
+  {
+    "objectID": "index.html#how-to-use",
+    "href": "index.html#how-to-use",
+    "title": "datasetsDynamic",
+    "section": "How to use",
+    "text": "How to use\nFor every dataset a load function is implemented which computes training and test data for the corresponding dataset including all preprocessing and basic feature engineering steps. For most datasets the test period can be chosen dynamically using the parameter testDays. While doing so, it is ensured that all features that depend on the train and test structure are computed only based on the training data.\n\nfrom datasetsDynamic.loadDataYaz import loadDataYaz\ndata, XTrain, yTrain, XTest, yTest = loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, disable_progressbar = False)\n\nRolling: 100%|██████████| 30/30 [00:00<00:00, 36.35it/s]\nFeature Extraction: 100%|██████████| 30/30 [00:02<00:00, 13.59it/s]\nRolling: 100%|██████████| 30/30 [00:00<00:00, 35.29it/s]\nFeature Extraction: 100%|██████████| 30/30 [00:02<00:00, 12.19it/s]\nRolling: 100%|██████████| 30/30 [00:00<00:00, 37.20it/s]\nFeature Extraction: 100%|██████████| 30/30 [00:02<00:00, 14.39it/s]\n\n\n\nfrom datasetsDynamic.loadDataBakery import loadDataBakery\ndata, XTrain, yTrain, XTest, yTest = loadDataBakery(testDays = 28, returnXY = True, daysToCut = 0, disable_progressbar = False)\n\nRolling: 100%|██████████| 152/152 [00:11<00:00, 13.25it/s]\nFeature Extraction: 100%|██████████| 160/160 [00:43<00:00,  3.70it/s]\nRolling: 100%|██████████| 152/152 [00:12<00:00, 11.84it/s]\nFeature Extraction: 100%|██████████| 160/160 [00:44<00:00,  3.59it/s]\nRolling: 100%|██████████| 152/152 [00:11<00:00, 13.53it/s]\nFeature Extraction: 100%|██████████| 160/160 [00:44<00:00,  3.57it/s]"
+  },
+  {
+    "objectID": "yaz.html",
+    "href": "yaz.html",
+    "title": "Yaz Dataset",
+    "section": "",
+    "text": "source\n\n\n\n loadDataYaz (testDays=28, returnXY=True, daysToCut=0, unstacked=False,\n              disable_progressbar=False)"
+  },
+  {
+    "objectID": "unitTests.html#bakery",
+    "href": "unitTests.html#bakery",
+    "title": "datasetsDynamic",
+    "section": "Bakery",
+    "text": "Bakery\n\nscalingValues = data['scalingValue']\nassert len(np.unique(scalingValues)) <= len(data['id'].unique())"
+  },
+  {
+    "objectID": "bakery.html",
+    "href": "bakery.html",
+    "title": "Bakery Dataset",
+    "section": "",
+    "text": "source\n\n\n\n loadDataBakery (testDays=28, returnXY=True, daysToCut=0,\n                 disable_progressbar=False)"
+  }
+]
