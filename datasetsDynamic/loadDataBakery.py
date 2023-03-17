@@ -20,7 +20,7 @@ from .utils import *
 __all__ = ['loadDataBakery']
 
 # %% ../nbs/02_bakery.ipynb 4
-def loadDataBakery(testDays = 28, daysToCut = 0, normalizeDemand = True, returnXY = True):
+def loadDataBakery(testDays = 28, daysToCut = 0, normalizeDemand = True, returnXY = False):
     
     # LOAD RAW DATA
     dataPath = pkg_resources.resource_stream(__name__, 'datasets/dataBakery_unprocessed.csv')

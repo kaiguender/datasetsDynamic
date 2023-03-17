@@ -20,7 +20,7 @@ import os
 __all__ = ['loadDataYaz']
 
 # %% ../nbs/01_yaz.ipynb 5
-def loadDataYaz(testDays = 7, daysToCut = 0, normalizeDemand = True, unstacked = True, returnXY = True):
+def loadDataYaz(testDays = 7, daysToCut = 0, normalizeDemand = True, unstacked = True, returnXY = False):
 
     # LOAD DATA
     dataPath = pkg_resources.resource_stream(__name__, 'datasets/dataYaz_unprocessed.csv')
