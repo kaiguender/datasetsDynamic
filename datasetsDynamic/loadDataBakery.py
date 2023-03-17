@@ -20,7 +20,13 @@ from .utils import *
 __all__ = ['loadDataBakery']
 
 # %% ../nbs/02_bakery.ipynb 4
-def loadDataBakery(testDays = 28, daysToCut = 0, normalizeDemand = True, returnXY = False):
+def loadDataBakery(testDays = 28,
+                   daysToCut = 0, 
+                   normalizeDemand = True, 
+                   lags = np.arange(1, 8), 
+                   lagsArithmetic = np.arange(7, 29, 7),
+                   removeNAFromLag = True, 
+                   returnXY = False):
     
     # LOAD RAW DATA
     dataPath = pkg_resources.resource_stream(__name__, 'datasets/dataBakery_unprocessed.csv')
@@ -113,8 +119,9 @@ def loadDataBakery(testDays = 28, daysToCut = 0, normalizeDemand = True, returnX
     
     data = createLagFeatures(data = data, 
                              idFeature = 'id', 
-                             lagDays = range(1, 8),
-                             lagDaysArithmetic = [7, 14, 21, 28])
+                             lags = lags,
+                             lagsArithmetic = lagsArithmetic,
+                             removeNAFromLag = True)
     
     #---
     

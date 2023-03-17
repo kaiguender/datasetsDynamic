@@ -13,7 +13,7 @@ import numpy as np
 __all__ = ['createLagFeatures', 'getWeekdayFeature', 'getMonthFeature', 'getDayIndex']
 
 # %% ../nbs/00_utils.ipynb 5
-def createLagFeatures(data, idFeature = 'id', lagDays = range(1, 8), lagDaysArithmetic = [7, 14, 21, 28]):
+def createLagFeatures(data, idFeature = 'id', lags = range(1, 8), lagsArithmetic = [7, 14, 21, 28], removeNAFromLag = True):
 
     IDs = data[idFeature].unique()
 
@@ -26,16 +26,16 @@ def createLagFeatures(data, idFeature = 'id', lagDays = range(1, 8), lagDaysArit
         y = dataID.demand
 
         # Create lag features of y (demand) with time windows of 7 days
-        lagDemands = [y.shift(i) for i in lagDays]
+        lagDemands = [y.shift(i) for i in lags]
         yLag = pd.concat(lagDemands, axis = 1)
 
-        yLag.columns = ['demand_lag_' + str(i) for i in range(1, 8)]
+        yLag.columns = ['demand_lag_' + str(i) for i in lags]
 
         #---
 
         yLagArithmeticList = list()
         # Create lagged mean, max, min, variance, sum of last 7, 14, 21 and 28 days without current day
-        for i in lagDaysArithmetic:
+        for i in lagsArithmetic:
 
             # remove current day
             yMod = y.shift(1)
@@ -67,10 +67,18 @@ def createLagFeatures(data, idFeature = 'id', lagDays = range(1, 8), lagDaysArit
 
     # Concatenate lag features of all items
     yLagAllIDs = pd.concat(yLagPerID, axis = 0)
-
+    
     # Add lag features to data
     dataWithLags = pd.concat([data, yLagAllIDs], axis = 1)
-
+    
+    #---
+    
+    if removeNAFromLag:
+        indicesToRemove = ~np.isnan(yLagAllIDs).any(axis = 1)
+        dataWithLags = dataWithLags[indicesToRemove]      
+    
+    #---
+    
     return dataWithLags
 
 

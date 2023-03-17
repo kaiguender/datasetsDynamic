@@ -20,13 +20,18 @@ import os
 __all__ = ['loadDataYaz']
 
 # %% ../nbs/01_yaz.ipynb 5
-def loadDataYaz(testDays = 7, daysToCut = 0, normalizeDemand = True, unstacked = False, returnXY = False):
+def loadDataYaz(testDays = 7, 
+                daysToCut = 0, 
+                normalizeDemand = True, 
+                lags = np.arange(1, 8), 
+                lagsArithmetic = np.arange(7, 29, 7), 
+                removeNAFromLag = True, 
+                unstacked = False, 
+                returnXY = False):
 
     # LOAD DATA
     dataPath = pkg_resources.resource_stream(__name__, 'datasets/dataYaz_unprocessed.csv')
     data = pd.read_csv(dataPath)
-    # dataPath = "/home/kagu/datasetsDynamic/datasetsDynamic/datasets/dataYaz_unprocessed.csv"
-    # data = pd.read_csv(dataPath)
 
     # DAY INDEX
     data = data.reset_index().rename(columns = {'index': 'dayIndex'})
@@ -87,9 +92,10 @@ def loadDataYaz(testDays = 7, daysToCut = 0, normalizeDemand = True, unstacked =
 
     # DEMAND LAG FEATURES
     data = createLagFeatures(data = data, 
-                            idFeature = 'id',
-                            lagDays = range(1, 8), 
-                            lagDaysArithmetic = [7, 14, 21, 28])
+                             idFeature = 'id',
+                             lags = lags, 
+                             lagsArithmetic = lagsArithmetic,
+                             removeNAFromLag = removeNAFromLag)
 
     #---
  
@@ -102,7 +108,7 @@ def loadDataYaz(testDays = 7, daysToCut = 0, normalizeDemand = True, unstacked =
         colsDemand = [column for column in X.columns if 'demand_' in column]
         colsOther = [column for column in X.columns if not 'demand_' in column]
         
-        generalData = data[colsOther][data['id'] == X['id'][0]].reset_index(drop = True).drop(['id', 'scalingValue'], axis = 1)
+        generalData = data[colsOther][data['id'] == X['id'].iloc[0]].reset_index(drop = True).drop(['id', 'scalingValue'], axis = 1)
         
         XList = list()
         yList = list()
