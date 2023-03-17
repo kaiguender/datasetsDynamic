@@ -5,37 +5,33 @@ from __future__ import annotations
 from fastcore.docments import *
 from fastcore.test import *
 from fastcore.utils import *
+from .utils import *
 
 import pandas as pd
 import numpy as np
 
 from os.path import join
-from tsfresh.feature_extraction import MinimalFCParameters
-from tsfresh.utilities.dataframe_functions import roll_time_series
-from tsfresh import extract_features
 import pathlib
 import pkg_resources
+import os
 
-from .utils import *
 
 # %% auto 0
 __all__ = ['loadDataYaz']
 
 # %% ../nbs/01_yaz.ipynb 5
-def loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, unstacked = False, disable_progressbar = False):
-    
+def loadDataYaz(testDays = 7, daysToCut = 0, normalizeDemand = True, unstacked = True, returnXY = True):
+
     # LOAD DATA
     dataPath = pkg_resources.resource_stream(__name__, 'datasets/dataYaz_unprocessed.csv')
     data = pd.read_csv(dataPath)
-    
-    #---
-    
+    # dataPath = "/home/kagu/datasetsDynamic/datasetsDynamic/datasets/dataYaz_unprocessed.csv"
+    # data = pd.read_csv(dataPath)
+
     # DAY INDEX
     data = data.reset_index().rename(columns = {'index': 'dayIndex'})
     data['dayIndex'] = data.dayIndex
 
-    #---
-    
     # SEPARATE DEMAND OF DIFFERENT ITEMS
     X = data.iloc[:, 0:11]
     y = data.iloc[:, 12:]
@@ -52,7 +48,7 @@ def loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, unstacked = False
     data = pd.concat(dataList, axis = 0)
 
     #---
-    
+
     # ID FEATURE AND SORTING
     data['id'] = data['item']
     data = data.sort_values(by = ['id', 'dayIndex'], axis = 0).reset_index(drop = True)
@@ -62,9 +58,9 @@ def loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, unstacked = False
     # CUT DAYS DEPENDING ON DAYSTOCUT
     cutOffDate = data.dayIndex.max() - daysToCut
     data = data[data['dayIndex'] <= cutOffDate].reset_index(drop = True)
-    
+
     #---
-    
+
     # LABEL
     if isinstance(testDays, int):
         nDaysTest = testDays
@@ -74,46 +70,39 @@ def loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, unstacked = False
 
     cutoffDateTest = data.dayIndex.max() - nDaysTest
     data['label'] = ['train' if data.dayIndex.iloc[i] <= cutoffDateTest else 'test' for i in range(data.shape[0])]    
-    
-    #---
-    
-    # NORMALIZE DEMAND
-    scalingData = data[data.label == 'train'].groupby('id')['demand'].agg('max').reset_index()
-    scalingData.rename(columns = {'demand': 'scalingValue'}, inplace = True)
-    data = pd.merge(data, scalingData, on = 'id')
 
-    data['demand'] = data.demand / data.scalingValue
+    #---
+
+    # NORMALIZE DEMAND
+    if normalizeDemand:
+        scalingData = data[data.label == 'train'].groupby('id')['demand'].agg('max').reset_index()
+        scalingData.rename(columns = {'demand': 'scalingValue'}, inplace = True)
+        data = pd.merge(data, scalingData, on = 'id')
+
+        data['demand'] = data.demand / data.scalingValue
+    else:
+        data['scalingValue'] = 1
 
     #---
 
     # DEMAND LAG FEATURES
-    y = pd.DataFrame(data['demand'])
-    X = data.drop(columns = ['demand'])
+    data = createLagFeatures(data = data, 
+                            idFeature = 'id',
+                            lagDays = range(1, 8), 
+                            lagDaysArithmetic = [7, 14, 21, 28])
 
-    # set lag features
-    fc_parameters = MinimalFCParameters()
-
-    # delete length features
-    del fc_parameters['length']
-
-    # create lag features
-    X, y = add_lag_features(X = X, 
-                            y = y, 
-                            column_id = ['id'], 
-                            column_sort = 'dayIndex', 
-                            feature_dict = fc_parameters, 
-                            time_windows = [(7, 7), (14, 14), (28, 28)],
-                            n_jobs = 6, 
-                            disable_progressbar = False)
-    
     #---
-
+ 
     # CREATE UNSTACKED MULTIDIMENSIONAL DEMAND VECTOR IF DESIRED
+    
+    X = data.drop(['demand'], axis = 1, inplace = False)
+    y = data[['demand']]
+
     if unstacked:
-        colsDemand = [column for column in X.columns if 'demand__' in column]
-        colsOther = [column for column in X.columns if not 'demand__' in column]
+        colsDemand = [column for column in X.columns if 'demand_' in column]
+        colsOther = [column for column in X.columns if not 'demand_' in column]
         
-        generalData = X[colsOther][X['id'] == X['id'][0]].reset_index(drop = True).drop(['id', 'scalingValue'], axis = 1)
+        generalData = data[colsOther][data['id'] == X['id'][0]].reset_index(drop = True).drop(['id', 'scalingValue'], axis = 1)
         
         XList = list()
         yList = list()
@@ -142,39 +131,51 @@ def loadDataYaz(testDays = 28, returnXY = True, daysToCut = 0, unstacked = False
         X = pd.concat([X, scalingValues], axis = 1)
 
     #---
-    
+
     # DATE DUMMY VARIABLES
     X['year'] = X['year'].apply(lambda x: str(int(x)))
 
-    X = pd.concat([X, 
-                  pd.get_dummies(X.weekday, prefix = 'weekday'), 
-                  pd.get_dummies(X.month, prefix = 'month'), 
-                  pd.get_dummies(X.year, prefix = 'year')], axis = 1).drop(['weekday', 'month', 'year'], axis = 1)
+    dateDummies = pd.concat([pd.get_dummies(X.weekday, prefix = 'weekday'), 
+                             pd.get_dummies(X.month, prefix = 'month'), 
+                             pd.get_dummies(X.year, prefix = 'year')], axis = 1)
 
-    X = pd.concat([X, pd.get_dummies(X.item, prefix = 'item')], axis = 1).drop(['item'], axis = 1)
+    itemDummies = pd.get_dummies(X.item, prefix = 'item')
+
+    X = pd.concat([X, dateDummies, itemDummies], axis = 1).drop(['weekday', 'month', 'year', 'item'], axis = 1)
 
     #---
-    
+
     # SPLIT INTO TRAIN AND TEST DATA
-    data = pd.concat([y, X], axis = 1)   
-    
     if unstacked:
         XArray = np.array(X.drop(['label'], axis = 1))
-        yArray = np.array(y)           
+        yArray = np.array(y)          
     else:
         XArray = np.array(X.drop(['label', 'id'], axis = 1))
         yArray = np.ravel(y)    
-    
-    XTrain = XArray[data['label'] == 'train']
-    yTrain = yArray[data['label'] == 'train']
 
-    XTest = XArray[data['label'] == 'test']
-    yTest = yArray[data['label'] == 'test']
+
+    XTrain = XArray[X['label'] == 'train']
+    yTrain = yArray[X['label'] == 'train']
+
+    XTest = XArray[X['label'] == 'test']
+    yTest = yArray[X['label'] == 'test']
+
+    data = pd.concat([y, X], axis = 1)
 
     #---
+
+    if not normalizeDemand:
+        
+        if unstacked:
+            colsScalingValue = [column for column in X.columns if 'scalingValue' in column]
+            data.drop(colsScalingValue, axis = 1)
+            X.drop(colsScalingValue, axis = 1)
+            
+        else:
+            data = data.drop(['scalingValue'], axis = 1)
+            X = X.drop(['scalingValue'], axis = 1)
 
     if returnXY:
         return data, XTrain, yTrain, XTest, yTest
     else:
         return data    
-
